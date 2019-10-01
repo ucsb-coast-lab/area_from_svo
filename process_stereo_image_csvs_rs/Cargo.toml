@@ -1,10 +1,13 @@
 [package]
-name = "read_array"
+name = "process_stereo_image_csvs_rs"
 version = "0.1.0"
 authors = ["cmoran <christophermoran@ucsb.edu>"]
 edition = "2018"
 
 [dependencies]
 csv = "1.1.1"
-ndarray = "0.12.1"
 image = "0.22.1"
+
+[lib]
+name = "process_stereo_image_csvs_rs"
+crate-type = ["staticlib","cdylib"]

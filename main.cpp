@@ -4,6 +4,8 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+// FFI include for Rust library
+#include "process_stereo_image_csvs_rs.h"
 
 using namespace sl;
 
@@ -12,13 +14,18 @@ int main(int argc, char **argv) {
     // Create ZED objects
     Camera zed;
     InitParameters initParameters;
-    // initParameters.svo_input_filename.set(argv[1]);
+    // Accepting the command line arguments for this program, where the .svo file
+    // (which must be located in same directory as the binary!) is $1 and the frame
+    // number we wish to access and analyze is $2
+    std::string svo_filename = argv[1];
+    int frame_num = std::atoi(argv[2]);
+    std::string delimiter = ".svo";
+    std::string token = svo_filename.substr(0, svo_filename.find(delimiter));
+    std::string csv_filename = "stereo_image_csvs/" + token + "_" + std::to_string(frame_num) + ".csv";
+
     initParameters.input.setFromSVOFile(argv[1]);
     RuntimeParameters runtime_param;
     runtime_param.sensing_mode = SENSING_MODE_STANDARD;
-
-    int svo_number = std::atoi(argv[2]);
-    std::cout << "The requested svo frame is: " << svo_number << std::endl;
 	initParameters.depth_mode = DEPTH_MODE_ULTRA;
 
     // Open the ZED
@@ -31,13 +38,16 @@ int main(int argc, char **argv) {
 
     int total_frames = zed.getSVONumberOfFrames();
     printf("The number of frames in this svo is: %i\n",total_frames);
+    std::cout << "The requested svo frame is: " << frame_num << std::endl;
+    std::cout << "This will translate to a csv file at: " << csv_filename << std::endl;
+
     int width = zed.getResolution().width;
     int height = zed.getResolution().height;
     printf("ZED (width, height) = (%i,%i)\n",width,height);
 
     sl::Mat image, depth, point_cloud;
     int svo_frame = zed.getSVOPosition();
-    zed.setSVOPosition(svo_number);
+    zed.setSVOPosition(frame_num);
     // Sleeps the thread for a set amount of milliseconds
     //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
@@ -51,11 +61,12 @@ int main(int argc, char **argv) {
     if ((zed.grab() == SUCCESS) && (zed.grab() == SUCCESS) && (zed.grab() == SUCCESS)) {
             std::cout << "Accessing image" << std::endl;
             zed.retrieveImage(image, VIEW_LEFT); // Get the rectified left image
-            image.write("left.png");
+            std::string left_image_filename = "left_view_images/left" + std::to_string(frame_num) + ".png";
+            //image.write(left_image_filename);
+            image.write(left_image_filename.c_str());
 
-            std::string filename = "test.csv";
             std::ofstream file;
-            file.open(filename);
+            file.open(csv_filename);
             zed.retrieveMeasure(point_cloud, MEASURE_XYZRGBA);
             file << "pixel_x," << "pixel_y," << "x," << "y," << "z," << "R," << "G," << "B" << std::endl;
             std::cout << "About to process the imagery:" << std::endl;
@@ -82,8 +93,6 @@ int main(int argc, char **argv) {
                     file << std::fixed << i << "," << j << "," << x << "," << y << "," << z << "," << int(left_pixel.r) << "," << int(left_pixel.g) << "," << int(left_pixel.b) << std::endl;
                 }
             }
-
-
     }
     else if (zed.grab() != SUCCESS) {
         std::cout << "We had an error opening the camera view successfully" << std::endl;
@@ -91,5 +100,8 @@ int main(int argc, char **argv) {
 
     // Close the camera
     zed.close();
+    open_file_rs(csv_filename.c_str());
+    print_area_rs(csv_filename.c_str());
+
     return 0;
 }
