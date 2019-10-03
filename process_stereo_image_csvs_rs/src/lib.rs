@@ -244,7 +244,7 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
         }
     }
     println!("The summed px_area total of {} based on {} slate-assigned pixels is {} mm^2, or {:.2}% of the 12500 ideal",image_path,target_pixels,sum_area,sum_area/12500.0);
-    img.save(image_path).unwrap();
+    img.save(image_path).expect("Was not able to save modified image to file");
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
     target_pixels
 }
