@@ -5,3 +5,4 @@ ZEDDepthAndColor
 *.csv
 *.png
 plots/
+ZEDAreaFromSVO

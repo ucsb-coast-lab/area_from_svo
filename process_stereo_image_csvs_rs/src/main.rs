@@ -1,26 +1,27 @@
 mod lib;
 use lib::print_area;
 
-use std::ffi::OsString;
-use std::error::Error;
 use std::env;
+use std::error::Error;
+use std::ffi::OsString;
 
 // Can be used to check area calculations on a pre-built stereo image .csv file
 // This will always panic at the moment, since the hard-coded paths for the modified
 // image folder doesn't exist in this directory
 fn main() {
-
     let file_path = match get_first_arg() {
         Ok(path) => path,
-        Err(error) => panic!("Error: Provided file_path string was not considered valid because {}",error)
+        Err(error) => panic!(
+            "Error: Provided file_path string was not considered valid because {}",
+            error
+        ),
     };
 
     let path = match file_path.into_string() {
         Ok(path) => path,
-        Err(_error) => panic!("Couldn't convert OsString to String")
+        Err(_error) => panic!("Couldn't convert OsString to String"),
     };
     print_area(&path);
-
 }
 
 /// Returns the first positional argument sent to this process. If there are no

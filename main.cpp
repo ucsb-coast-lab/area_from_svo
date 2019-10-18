@@ -37,13 +37,13 @@ int main(int argc, char **argv) {
     }
 
     int total_frames = zed.getSVONumberOfFrames();
-    printf("The number of frames in this svo is: %i\n",total_frames);
-    std::cout << "The requested svo frame is: " << frame_num << std::endl;
-    std::cout << "This will translate to a csv file at: " << csv_filename << std::endl;
+    //printf("The number of frames in this svo is: %i\n",total_frames);
+    //std::cout << "The requested svo frame is: " << frame_num << std::endl;
+    //std::cout << "This will translate to a csv file at: " << csv_filename << std::endl;
 
     int width = zed.getResolution().width;
     int height = zed.getResolution().height;
-    printf("ZED (width, height) = (%i,%i)\n",width,height);
+    //printf("ZED (width, height) = (%i,%i)\n",width,height);
 
     sl::Mat image, depth, point_cloud;
     int svo_frame = zed.getSVOPosition();
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     // TO_DO: File a GH issue with ZED about this to find out what's going on
 
     if ((zed.grab() == SUCCESS) && (zed.grab() == SUCCESS) && (zed.grab() == SUCCESS)) {
-            std::cout << "Accessing image" << std::endl;
+            //std::cout << "Accessing image" << std::endl;
             zed.retrieveImage(image, VIEW_LEFT); // Get the rectified left image
             std::string left_image_filename = "left_view_images/left" + std::to_string(frame_num) + ".png";
             //image.write(left_image_filename);
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
             file.open(csv_filename);
             zed.retrieveMeasure(point_cloud, MEASURE_XYZRGBA);
             file << "pixel_x," << "pixel_y," << "x," << "y," << "z," << "R," << "G," << "B" << std::endl;
-            std::cout << "About to process the imagery:" << std::endl;
+            //std::cout << "About to process the imagery:" << std::endl;
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
                     sl::float4 point3D;

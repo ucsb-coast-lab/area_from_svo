@@ -4,7 +4,7 @@ use core::f32::consts::PI;
 fn main() {
 
     println!("dH * dV = A\n");
-    let r_list: Vec<f32> = vec![1000.0,1500.0,2000.0,2500.0,3000.0];
+    let r_list: Vec<f32> = vec![1000.0,1500.0,2000.0,2500.0,3000.0,3500.0,4000.0];
     for r in r_list {
 
         let n1: f32 = 1.0; // Approximate index of refraction for air

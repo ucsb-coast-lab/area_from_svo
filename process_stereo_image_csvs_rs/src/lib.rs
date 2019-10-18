@@ -81,7 +81,7 @@ fn open_file(filename: &str) {
 
 #[no_mangle]
 pub extern "C" fn print_area_rs(filename_arg: *const c_char) {
-    // println!("About to attempt parsing the filename_arg in Rust");
+    //println!("About to attempt parsing the filename_arg in Rust");
     let csv_filename = parse_filename_from_c(filename_arg);
     // println!("Parsed csv_filname of: {} from C++ argument", csv_filename);
     print_area(&csv_filename);
@@ -89,14 +89,15 @@ pub extern "C" fn print_area_rs(filename_arg: *const c_char) {
 
 pub fn print_area(filename: &str) {
     let csv_path = filename.split("stereo_image_csvs/").collect::<Vec<&str>>();
-    println!("csv_path: {}", csv_path[1]);
+    //println!("csv_path: {}", csv_path[1]);
     let parsed_path = csv_path[1].split(".csv").collect::<Vec<&str>>();
     // println!("image_path except csv: {}", parsed_path[0]);
     let image_path = "processed_images/".to_owned() + &parsed_path[0].to_owned() + ".png";
-    println!("The processed image will be saved to: {}", image_path);
+    //println!("The processed image will be saved to: {}", image_path);
     let arr: Vec<StereoPixel> = convert_records_to_array(&filename);
     let target_pixels: f32 =
         convert_array_to_image_and_get_number_of_target_pixels(arr, &image_path);
+    println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}",filename, target_pixels,12500f32/(target_pixels as f32));
 }
 
 fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
@@ -172,6 +173,9 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
             //let pixel_sum = (r.pow(2) as f32 + g.pow(2) as f32 + b.pow(2) as f32).powf(0.5);
             //println!("pixel_sum = {} at z = {}",pixel_sum,z);
 
+
+            // Below are a bunch of filters that are designed to isolate the target slate, each of
+            // which have been customized depending on the .svo file that they're parsing
             // TO_DO: These filters should be written as functions, where the pixel can get passed
             // to them
 
@@ -218,6 +222,48 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = 0;
                     pixel[2] = 0;
                 }
+            } else if image_path.contains("serial2") {
+                if arr[(WIDTH * row) + col].r < 69
+                    && arr[(WIDTH * row) + col].g < 35
+                    && row > 300
+                    && (arr[(WIDTH * row) + col].z < 4000.0 || arr[(WIDTH * row) + col].z == 0.0 )
+                    && col < 1100
+                {
+                    //dbg!(pixel_sum);
+                    pixel[0] = b; // b
+                    pixel[1] = g; // g
+                    pixel[2] = r; // r
+                    target_pixels = target_pixels + 1.0;
+                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
+                //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
+                //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
+                //sum_area += px_area;
+                } else {
+                    pixel[0] = 0;
+                    pixel[1] = 0;
+                    pixel[2] = 0;
+                }
+            } else if image_path.contains("serial") { // Needs to come AFTER serial2 filter
+                if arr[(WIDTH * row) + col].r < 62
+                    && row > 300
+                    && (arr[(WIDTH * row) + col].z < 4000.0 || arr[(WIDTH * row) + col].z == 0.0 )
+                    && col < 1500
+                    && col > 600
+                {
+                    //dbg!(pixel_sum);
+                    pixel[0] = b; // b
+                    pixel[1] = g; // g
+                    pixel[2] = r; // r
+                    target_pixels = target_pixels + 1.0;
+                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
+                //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
+                //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
+                //sum_area += px_area;
+                } else {
+                    pixel[0] = 0;
+                    pixel[1] = 0;
+                    pixel[2] = 0;
+                }
             } else if image_path.contains("tank") {
                 if arr[(WIDTH * row) + col].r < 80
                     && arr[(WIDTH * row) + col].g < 66
@@ -238,13 +284,18 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = 0;
                     pixel[2] = 0;
                 }
+            } else {
+                panic!(
+                    "The supplied image does not meet ANY of the filtered image path requirements"
+                )
             }
             //let pixel = image::Rgb([b, g, r])
             img.put_pixel(x, y, pixel);
         }
     }
-    println!("The summed px_area total of {} based on {} slate-assigned pixels is {} mm^2, or {:.2}% of the 12500 ideal",image_path,target_pixels,sum_area,sum_area/12500.0);
-    img.save(image_path).expect("Was not able to save modified image to file");
+    // println!("The summed px_area total of {} based on {} slate-assigned pixels is {} mm^2, or {:.2}% of the 12500 ideal",image_path,target_pixels,sum_area,sum_area/12500.0);
+    img.save(image_path)
+        .expect("Was not able to save modified image to file");
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
     target_pixels
 }
