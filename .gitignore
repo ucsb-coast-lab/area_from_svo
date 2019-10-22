@@ -6,3 +6,4 @@ ZEDDepthAndColor
 *.png
 plots/
 ZEDAreaFromSVO
+*.ods
