@@ -97,7 +97,7 @@ pub fn print_area(filename: &str) {
     let arr: Vec<StereoPixel> = convert_records_to_array(&filename);
     let target_pixels: f32 =
         convert_array_to_image_and_get_number_of_target_pixels(arr, &image_path);
-    println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}",filename, target_pixels,12500f32/(target_pixels as f32));
+    println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}\n",filename, target_pixels,12500f32/(target_pixels as f32));
 }
 
 fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
@@ -163,6 +163,7 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
             let mut pixel = image::Rgb([b, g, r]);
             let col = x as usize;
             let row = y as usize;
+            let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
 
             // Do some filtering here
             // Something's off here; I think the R,B values might be flipped between what I think
@@ -194,10 +195,10 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = g; // g
                     pixel[2] = r; // r
                     target_pixels = target_pixels + 1.0;
-                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
-                    let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
-                    //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
+                    //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp())); // Original experimental data curve fit
+                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
                     sum_area += px_area;
+                    //println!("px_area of target pixel #{} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
                 } else {
                     pixel[0] = 0;
                     pixel[1] = 0;
@@ -217,6 +218,8 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = g; // g
                     pixel[2] = r; // r
                     target_pixels = target_pixels + 1.0;
+                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
+                    sum_area += px_area;
                 } else {
                     pixel[0] = 0;
                     pixel[1] = 0;
@@ -234,6 +237,8 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = g; // g
                     pixel[2] = r; // r
                     target_pixels = target_pixels + 1.0;
+                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
+                    sum_area += px_area;
                     let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
                 //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
                 //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
@@ -255,10 +260,8 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = g; // g
                     pixel[2] = r; // r
                     target_pixels = target_pixels + 1.0;
-                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
-                //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
-                //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
-                //sum_area += px_area;
+                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
+                    sum_area += px_area;
                 } else {
                     pixel[0] = 0;
                     pixel[1] = 0;
@@ -275,9 +278,7 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
                     pixel[1] = g; // g
                     pixel[2] = r; // r
                     target_pixels = target_pixels + 1.0;
-                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
-                    let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
-                    //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
+                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
                     sum_area += px_area;
                 } else {
                     pixel[0] = 0;
@@ -294,6 +295,7 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
         }
     }
     // println!("The summed px_area total of {} based on {} slate-assigned pixels is {} mm^2, or {:.2}% of the 12500 ideal",image_path,target_pixels,sum_area,sum_area/12500.0);
+    println!("Based on the summed area of distance-corrected target-assigned pixels ({}), the slate area is: {} with an average area of {} mm^2/pixel",target_pixels,sum_area,sum_area/target_pixels);
     img.save(image_path)
         .expect("Was not able to save modified image to file");
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
