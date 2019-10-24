@@ -15,6 +15,11 @@ To batch run an entire .svo file:
 ```
 $ ./batch_run.sh $filename.svo
 ```
+In addition, pre-built stereo imagery `.csv` files can be processed to test filtering methods alone using the the `process_stereo_image_csvs_rs` directory. To do this, with the already-produced `.csv` file located in the `stereo_image_csvs` directory, run:
+```
+$ cargo run --release stereo_image_csvs/filename.csv
+```
+
 __Build Requirements__
 - ZED-supported NVIDIA GPU
 - NVIDIA CUDA 10.0 (*not 10.1*)
@@ -37,10 +42,13 @@ Build scripts need to be run in the repositories of their respective repositorie
 ├── main.cpp
 ├── process_stereo_image_csvs_rs
 │   ├── binding
-│   ├── Cargo.lock
 │   ├── Cargo.toml
-│   └── src
+│   ├── processed_images
+│   ├── src
+│   └── stereo_image_csvs
 ├── README.md
+├── stereo_image_csvs
+│   └── placeholder.md
 ├── video_file.svo
 └── zed_count_frames
     ├── build.sh
