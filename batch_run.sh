@@ -4,7 +4,7 @@
 # that gets produced using that data!
 
 # Define the ZED .svo file that we want to process
-svo_file='pool.svo';
+svo_file=$1;
 
 # First, we're going make both the ZEDAreaFromSVO and ZEDCountFrames executables
 ./build.sh; # This should result in the placing of the ZEDAreaFromSVO in the current directory
