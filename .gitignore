@@ -6,4 +6,6 @@ ZEDDepthAndColor
 *.png
 plots/
 ZEDAreaFromSVO
+ZEDCountFrames
+zed_count_frames/build/*
 *.ods
