@@ -22,10 +22,10 @@ echo $total_frames
 # Since we have limited GPU memory, can only run up to three frames at once,
 # so we need to run sequential parallel commands.
 # We can modify this for-loop to specify the range of frames that we're interested in too
-for ((i=2151; i<2154;i=i+3))
+for ((i=0; i<$total_frames;i=i+3))
 do
     # parallel echo ::: $i $((i+1)) $((i+2))
-    parallel ./ZEDAreaFromSVO $svo_file ::: $i $((i+1)) $((i+2))
+    parallel ./ZEDAreaFromSVO $svo_file ::: $i $((i+1)) $((i+2)) >> results.csv
 done
 
 # Processing frame numbers for serial1: 638 913 1133 1419 1945 2229

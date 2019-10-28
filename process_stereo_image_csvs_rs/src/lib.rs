@@ -94,10 +94,14 @@ pub fn print_area(filename: &str) {
     // println!("image_path except csv: {}", parsed_path[0]);
     let image_path = "processed_images/".to_owned() + &parsed_path[0].to_owned() + ".png";
     //println!("The processed image will be saved to: {}", image_path);
+    let frame_num = &parsed_path[0].split("_").collect::<Vec<&str>>();
+    print!("{},",frame_num[2]);
+
     let arr: Vec<StereoPixel> = convert_records_to_array(&filename);
     let target_pixels: f32 =
         convert_array_to_image_and_get_number_of_target_pixels(arr, &image_path);
-    println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}\n",filename, target_pixels,12500f32/(target_pixels as f32));
+    // For debugging use the below println! line
+    // println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}\n",filename, target_pixels,12500f32/(target_pixels as f32));
 }
 
 fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
@@ -294,8 +298,9 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
             img.put_pixel(x, y, pixel);
         }
     }
-    // println!("The summed px_area total of {} based on {} slate-assigned pixels is {} mm^2, or {:.2}% of the 12500 ideal",image_path,target_pixels,sum_area,sum_area/12500.0);
-    println!("Based on the summed area of distance-corrected target-assigned pixels ({}), the slate area is: {} with an average area of {} mm^2/pixel",target_pixels,sum_area,sum_area/target_pixels);
+    // For de-buggin the following println! should be used
+    // println!("Based on the summed area of distance-corrected target-assigned pixels ({}), the slate area is: {} with an average area of {} mm^2/pixel",target_pixels,sum_area,sum_area/target_pixels);
+    println!("{}",sum_area);
     img.save(image_path)
         .expect("Was not able to save modified image to file");
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
