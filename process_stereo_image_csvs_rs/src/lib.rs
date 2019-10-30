@@ -91,11 +91,11 @@ pub fn print_area(filename: &str) {
     let csv_path = filename.split("stereo_image_csvs/").collect::<Vec<&str>>();
     //println!("csv_path: {}", csv_path[1]);
     let parsed_path = csv_path[1].split(".csv").collect::<Vec<&str>>();
-    // println!("image_path except csv: {}", parsed_path[0]);
+    //println!("image_path except csv: {}", parsed_path[0]);
     let image_path = "processed_images/".to_owned() + &parsed_path[0].to_owned() + ".png";
     //println!("The processed image will be saved to: {}", image_path);
     let frame_num = &parsed_path[0].split("_").collect::<Vec<&str>>();
-    print!("{},",frame_num[2]);
+    print!("{},",frame_num[1]);
 
     let arr: Vec<StereoPixel> = convert_records_to_array(&filename);
     let target_pixels: f32 =
@@ -105,7 +105,8 @@ pub fn print_area(filename: &str) {
 }
 
 fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
-    let file = File::open(file_path).expect("Couldn't open the file"); //?;
+    // println!("Attempting to open the stereo image csv at path: {}",file_path);
+    let file = File::open(file_path).expect("Couldn't open the stereo image .csv file"); //?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .delimiter(b',')

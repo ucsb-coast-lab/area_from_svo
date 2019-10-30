@@ -100,8 +100,11 @@ int main(int argc, char **argv) {
 
     // Close the camera
     zed.close();
-    open_file_rs(csv_filename.c_str());
-    print_area_rs(csv_filename.c_str());
+
+
+    // Moving the image processing aspect to a seperate function to glued together with a script
+    // open_file_rs(csv_filename.c_str());
+    // print_area_rs(csv_filename.c_str());
 
     return 0;
 }

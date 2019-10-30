@@ -5,7 +5,9 @@ ZEDDepthAndColor
 *.csv
 *.png
 plots/
-ZEDAreaFromSVO
-ZEDCountFrames
+#ZEDAreaFromSVO
+#ZEDCountFrames
+ZED*
 zed_count_frames/build/*
 *.ods
+*.zip
