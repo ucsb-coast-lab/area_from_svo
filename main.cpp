@@ -4,8 +4,9 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-// FFI include for Rust library
-#include "process_stereo_image_csvs_rs.h"
+
+// FFI include for Rust library (left in case we wanted to re-integrate)
+// #include "process_stereo_image_csvs_rs.h"
 
 using namespace sl;
 

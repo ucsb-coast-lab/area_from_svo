@@ -3,7 +3,6 @@
 # Since this script uses GNU Parallel, please remember to cite it in any publication
 # that gets produced using that data!
 
-
 ### DEFINE FUNCTIONS
 say_hello() {
     echo $1
@@ -30,9 +29,9 @@ run_build_scripts() {
 
 function write_stereo_image_csvs {
     # total_frames=$(./ZEDCountFrames $svo_file)
+    echo "- Accessing $1 to count frames"
     total_frames=$(./ZEDCountFrames $1)
-    echo $total_frames
-
+    echo "- The total number of frames in $1 is $total_frames"
     # Now we'll run our analysis in parallel.
     # Since we have limited GPU memory, can only run up to three frames at once,
     # so we need to run sequential parallel commands.
@@ -40,14 +39,16 @@ function write_stereo_image_csvs {
     for ((i=0; i<$total_frames;i=i+3))
     do
         # parallel echo ::: $i $((i+1)) $((i+2))
-        parallel ./ZEDAreaFromSVO $svo_file ::: $i $((i+1)) $((i+2)) >> results.csv
+        # parallel ./ZEDAreaFromSVO $svo_file ::: $i $((i+1)) $((i+2)) >> results.csv
+        echo "Writing frames $i, $((i+1)), and $((i+2)) to file"
+        parallel ./ZEDWriteStereoImageCSV $svo_file ::: $i $((i+1)) $((i+2))
     done
 }
 # Processing frame numbers for serial1: 638 913 1133 1419 1945 2229
 #                              serial2: 545 805 1085 1098 1417 1520 1727
 
 function batch_run_stereo_csvs {
-    echo 'Hello, world'
+
     csv_dir='stereo_image_csvs'
     files=($csv_dir/serial2*.csv);
     # num=$(ls -l | grep ^- | wc -l)
@@ -67,7 +68,11 @@ function batch_run_stereo_csvs {
 
 # Define the ZED .svo file that we want to process
 svo_file=$1;
-say_hello $svo_file;
+# say_hello $svo_file; # Test function
 run_build_scripts
-# write_stereo_image_csvs $svo_file
-batch_run_stereo_csvs
+if (( $# != 1 )); then
+    echo "* Error: Please only supply the path of the .svo file for processing as an argument"
+    exit
+fi
+write_stereo_image_csvs $svo_file
+#batch_run_stereo_csvs

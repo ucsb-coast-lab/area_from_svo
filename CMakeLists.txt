@@ -1,4 +1,4 @@
-SET(execName ZEDAreaFromSVO)
+SET(execName ZEDWriteStereoImageCSV)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(${execName})
 
@@ -36,6 +36,8 @@ SET(EXECUTABLE_OUTPUT_PATH ".")
 ### RUST INCLUDES
 ##################
 
+if(FALSE)
+
 SET(RUST_LIB process_stereo_image_csvs_rs)
 include_directories ("${PROJECT_BINARY_DIR}")
 include_directories ("${PROJECT_SOURCE_DIR}/${RUST_LIB}/binding")
@@ -51,6 +53,8 @@ ExternalProject_Add (
   INSTALL_COMMAND ""
   LOG_BUILD ON
  )
+
+ endif()
 #######################
 
 # ADD_EXECUTABLE(${execName} "main.cpp")
@@ -64,8 +68,8 @@ add_definitions(-std=c++11 -g -O3)
 TARGET_LINK_LIBRARIES(
     ${execName}
     ${ZED_LIBS}
-    debug "${PROJECT_SOURCE_DIR}/${RUST_LIB}/target/debug/libprocess_stereo_image_csvs_rs.a"
-    optimized "${PROJECT_SOURCE_DIR}/${RUST_LIB}/target/release/libprocess_stereo_image_csvs_rs.a"
+    # debug "${PROJECT_SOURCE_DIR}/${RUST_LIB}/target/debug/libprocess_stereo_image_csvs_rs.a"
+    # optimized "${PROJECT_SOURCE_DIR}/${RUST_LIB}/target/release/libprocess_stereo_image_csvs_rs.a"
     m
     dl
     pthread
