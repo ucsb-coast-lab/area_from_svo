@@ -12,6 +12,7 @@ using namespace sl;
 
 int main(int argc, char **argv) {
 
+
     // Create ZED objects
     Camera zed;
     InitParameters initParameters;
@@ -20,19 +21,20 @@ int main(int argc, char **argv) {
     // number we wish to access and analyze is $2
     std::string svo_filename = argv[1];
     int frame_num = std::atoi(argv[2]);
+    std::cout << "Parsing filename " << svo_filename << " at frame " << frame_num << std::endl;
     std::string delimiter = ".svo";
     std::string token = svo_filename.substr(0, svo_filename.find(delimiter));
-    std::string csv_filename = "stereo_image_csvs/" + token + "_" + std::to_string(frame_num) + ".csv";
+    std::string csv_filename = "stereo_image_csvs/" + token + "/" + token + "_" + std::to_string(frame_num) + ".csv";
 
     initParameters.input.setFromSVOFile(argv[1]);
     RuntimeParameters runtime_param;
     runtime_param.sensing_mode = SENSING_MODE_STANDARD;
-	initParameters.depth_mode = DEPTH_MODE_ULTRA;
+	  initParameters.depth_mode = DEPTH_MODE_ULTRA;
 
     // Open the ZED
     ERROR_CODE err = zed.open(initParameters);
     if (err != SUCCESS) {
-        std::cout << toString(err) << std::endl;
+        std::cout << "An error occurred: " << toString(err) << std::endl;
         zed.close();
         return 1; // Quit if an error occurred
     }
@@ -48,6 +50,7 @@ int main(int argc, char **argv) {
 
     sl::Mat image, depth, point_cloud;
     int svo_frame = zed.getSVOPosition();
+    // std::cout << "The current marker position in the .svo file is: " << svo_frame << std::endl;
     zed.setSVOPosition(frame_num);
     // Sleeps the thread for a set amount of milliseconds
     //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -60,7 +63,7 @@ int main(int argc, char **argv) {
     // TO_DO: File a GH issue with ZED about this to find out what's going on
 
     if ((zed.grab() == SUCCESS) && (zed.grab() == SUCCESS) && (zed.grab() == SUCCESS)) {
-            //std::cout << "Accessing image" << std::endl;
+            // std::cout << "Accessing image" << std::endl;
             zed.retrieveImage(image, VIEW_LEFT); // Get the rectified left image
             std::string left_image_filename = "left_view_images/left" + std::to_string(frame_num) + ".png";
             //image.write(left_image_filename);
@@ -91,7 +94,7 @@ int main(int argc, char **argv) {
                         //std::cout << "The location of this point is invalid" << std::endl;
                     }
                     //std::cout << std::fixed << x << "," << y << "," << z << "," << int(left_pixel.r) << "," << int(left_pixel.g) << "," << int(left_pixel.b) << std::endl;
-                    file << std::fixed << i << "," << j << "," << x << "," << y << "," << z << "," << int(left_pixel.r) << "," << int(left_pixel.g) << "," << int(left_pixel.b) << std::endl;
+                    file << std::fixed << std::setprecision(1) << i << "," << j << "," << x << "," << y << "," << z << "," << int(left_pixel.r) << "," << int(left_pixel.g) << "," << int(left_pixel.b) << std::endl;
                 }
             }
     }
