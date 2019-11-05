@@ -5,12 +5,20 @@
 
 ### DEFINE FUNCTIONS
 
-usage() {
+function usage {
   echo "Usage: $0 [-v <filename.svo>] [-c <stereo_image_csv_directory_path>]" 1>&2;
   exit 1;
 }
 
-run_build_scripts() {
+function build_rust() {
+    # Build the Rust image processing software
+    echo "- Building Rust image processing"
+    cd process_stereo_image_csvs_rs;
+    cargo build --release;
+    cd ..;
+}
+
+function build_zed {
     echo '- Compiling the executables'
     # Build the ZEDAreaFromSVO executable
     ./build.sh; # This should result in the placing of the ZEDAreaFromSVO in the current directory
@@ -21,12 +29,6 @@ run_build_scripts() {
     cp -p ZEDCountFrames ..;
     cd ..;
 
-    # Build the Rust image processing software
-    echo "- Building Rust image processing"
-    cd process_stereo_image_csvs_rs;
-    cargo build --release;
-    cd ..;
-    # Both binaries should now be in the current directory
 }
 
 function write_stereo_image_csvs {
@@ -44,8 +46,9 @@ function write_stereo_image_csvs {
     # Now we'll run our analysis in parallel.
     # Since we have limited GPU memory, can only run up to three frames at once,
     # so we need to run sequential parallel commands.
-    # We can modify this for-loop to specify the range of frames that we're interested in too
-    for ((i=0; i<$total_frames;i=i+100))
+
+    # ***EDIT THIS TO CHANGE HOW OFTEN FRAMES ARE SAMPLED FROM THE .SVO FILE***
+    for ((i=0; i<$total_frames;i=i+1))
     do
         # parallel echo ::: $i $((i+1)) $((i+2))
 
@@ -54,8 +57,6 @@ function write_stereo_image_csvs {
 
     done
 }
-# Processing frame numbers for serial1: 638 913 1133 1419 1945 2229
-#                              serial2: 545 805 1085 1098 1417 1520 1727
 
 function batch_run_stereo_csvs {
 
@@ -65,11 +66,8 @@ function batch_run_stereo_csvs {
     if [ ! -d processed_images/$svo_prefix ]; then
       mkdir processed_images/$svo_prefix;
     fi
-    #csv_dir='stereo_image_csvs'
-    #files=($csv_dir/serial2*.csv);
     echo "The directory is: $1"
     files=($1/*.csv)
-    # num=$(ls -l | grep ^- | wc -l)
     num="${#files[@]}"
     echo "The number of csv files in $1 is $num"
 
@@ -109,23 +107,24 @@ fi
 
 # If only a .svo file is provided, build and parse .svo
 if [ ! -z "${v}" ] && [ -z "${c}" ]; then
-    run_build_scripts
-    echo "WOULD BE PARSING .SVO FILE NOW!"
+    build_zed
+    echo "- Parsing .svo file!"
     write_stereo_image_csvs ${v}
 fi
 
 # If only a csv directory is provided, build and process csvs
 if [ -z "${v}" ] && [ ! -z "${c}" ]; then
-    # run_build_scripts
-    echo 'WOULD BE PROCESSING .CSV FILES NOW!'
+    build_rust
+    echo '- Processing .csv files!'
     batch_run_stereo_csvs ${c}
     # Data visualization with Python
     ./plot_results.py
 fi
 
-# If only a csv directory is provided, build and process csvs
+# If both a csv directory and is provided, build and process csvs
 if [ ! -z "${v}" ] && [ ! -z "${c}" ]; then
-    run_build_scripts
+    build_zed
+    build_rust
     echo 'WOULD BE BOTH PARSING .SVO FILE AND PROCESSING .CSV FILES NOW!'
     write_stereo_image_csvs ${v}
     batch_run_stereo_csvs ${c}
