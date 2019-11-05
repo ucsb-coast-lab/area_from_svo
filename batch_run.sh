@@ -30,20 +30,28 @@ run_build_scripts() {
 }
 
 function write_stereo_image_csvs {
-    # total_frames=$(./ZEDCountFrames $svo_file)
+    # makes sure that the folder ZEDWriteStereoImageCSV writes the .csv files to exists
+    # If it doesn't the files won't get written
+    svo_prefix=$(echo $1 | cut -d'.' -f1)
+    if [ ! -d stereo_image_csvs/$svo_prefix ]; then
+      mkdir stereo_image_csvs/$svo_prefix;
+    fi
+    #echo ".svo prefix is: $svo_prefix"
     echo "- Accessing $1 to count frames"
+    chmod u+x ZEDCountFrames
     total_frames=$(./ZEDCountFrames $1)
     echo "- The total number of frames in $1 is $total_frames"
     # Now we'll run our analysis in parallel.
     # Since we have limited GPU memory, can only run up to three frames at once,
     # so we need to run sequential parallel commands.
     # We can modify this for-loop to specify the range of frames that we're interested in too
-    for ((i=0; i<$total_frames;i=i+3))
+    for ((i=0; i<$total_frames;i=i+100))
     do
         # parallel echo ::: $i $((i+1)) $((i+2))
-        # parallel ./ZEDAreaFromSVO $svo_file ::: $i $((i+1)) $((i+2)) >> results.csv
-        echo "Writing frames $i, $((i+1)), and $((i+2)) to file"
-        parallel ./ZEDWriteStereoImageCSV $svo_file ::: $i $((i+1)) $((i+2))
+
+        ./ZEDWriteStereoImageCSV $1 $i
+        #parallel ./ZEDWriteStereoImageCSV &1 ::: $i $((i+1)) $((i+2))
+
     done
 }
 # Processing frame numbers for serial1: 638 913 1133 1419 1945 2229
@@ -51,24 +59,30 @@ function write_stereo_image_csvs {
 
 function batch_run_stereo_csvs {
 
-    csv_dir='stereo_image_csvs'
-    files=($csv_dir/serial2*.csv);
+    # makes sure that the folder ZEDWriteStereoImageCSV writes the .csv files to exists
+    # If it doesn't the files won't get written
+    svo_prefix=$(echo $1 | cut -d'/' -f2)
+    if [ ! -d processed_images/$svo_prefix ]; then
+      mkdir processed_images/$svo_prefix;
+    fi
+    #csv_dir='stereo_image_csvs'
+    #files=($csv_dir/serial2*.csv);
+    echo "The directory is: $1"
+    files=($1/*.csv)
     # num=$(ls -l | grep ^- | wc -l)
     num="${#files[@]}"
-    echo "The number of csv files in $csv_dir is $num"
+    echo "The number of csv files in $1 is $num"
 
-    for ((i=0;i<$num;i=i+8))
-    do
-        #./process_stereo_image_csvs_rs/target/release/process_stereo_image_csvs_rs ${files[$i]} # >> ../csv_only_results.csv
-        parallel ./process_stereo_image_csvs_rs/target/release/process_stereo_image_csvs_rs ::: ${files[$i]} ${files[$((i+1))]} ${files[$((i+2))]} ${files[$((i+3))]} ${files[$((i+4))]} ${files[$((i+5))]} ${files[$((i+6))]} ${files[$((i+7))]} >> results.csv
-        #echo "Done with frame $i"
-    done
+    parallel ./process_stereo_image_csvs_rs/target/release/process_stereo_image_csvs_rs ::: $1/*.csv >> results.csv
 
 }
 
 
 
 ### SCRIPT ###
+
+# Defines the number of available cores
+echo "The number of available cores is: $(nproc)"
 
 while getopts ":v:c:" o; do
     case "${o}" in
@@ -102,9 +116,11 @@ fi
 
 # If only a csv directory is provided, build and process csvs
 if [ -z "${v}" ] && [ ! -z "${c}" ]; then
-    run_build_scripts
+    # run_build_scripts
     echo 'WOULD BE PROCESSING .CSV FILES NOW!'
-    batch_run_stereo_csvs
+    batch_run_stereo_csvs ${c}
+    # Data visualization with Python
+    ./plot_results.py
 fi
 
 # If only a csv directory is provided, build and process csvs
@@ -112,5 +128,7 @@ if [ ! -z "${v}" ] && [ ! -z "${c}" ]; then
     run_build_scripts
     echo 'WOULD BE BOTH PARSING .SVO FILE AND PROCESSING .CSV FILES NOW!'
     write_stereo_image_csvs ${v}
-    batch_run_stereo_csvs
+    batch_run_stereo_csvs ${c}
+    # Data visualization with Python
+    ./plot_results.py
 fi
