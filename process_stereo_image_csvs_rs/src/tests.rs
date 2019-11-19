@@ -11,7 +11,7 @@ mod tests {
     fn it_works() {
         let now = Instant::now();
         let a = 4;
-        assert_eq!(4,a);
-        println!("{:?}",now.elapsed());
+        assert_eq!(4, a);
+        println!("{:?}", now.elapsed());
     }
 }

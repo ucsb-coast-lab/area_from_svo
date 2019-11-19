@@ -1,5 +1,5 @@
-mod tests;
 mod lib;
+mod tests;
 
 use lib::print_area;
 
