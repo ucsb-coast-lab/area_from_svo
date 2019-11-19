@@ -8,7 +8,10 @@ use std::os::raw::c_char;
 use std::f32;
 use std::fs::File;
 
-use image::{ImageBuffer, RgbImage};
+use image::{GenericImage, ImageBuffer, RgbImage, Rgba, Luma, RgbaImage};
+use image::load_from_memory;
+//use image::buffer::Pixel;
+use imageproc::contrast::{threshold_mut,stretch_contrast};
 
 // Each line of the calibration csv files is ultimately deserialized into this struct
 #[derive(Copy, Clone, Debug)]
@@ -154,8 +157,45 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
     let mut target_pixels: f32 = 0.0;
     let mut sum_area: f32 = 0.0;
 
-    for x in 0..w {
-        for y in 0..h {
+    //let mut my_image: RgbaImage = ImageBuffer::new(w, h);
+    let mut naive = image::DynamicImage::new_rgba8(w,h);
+
+    // Build the initial GenericImage structure
+    for y in 0..h {
+        for x in 0..w {
+            let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
+            naive.put_pixel(x,y,image::Rgba([sp.b, sp.g, sp.r, 255]))
+        }
+    }
+    // Run the preliminary image processing over it
+    let mut luma_image = naive.to_luma();
+    let stretched = stretch_contrast(&mut luma_image, 33,45);
+
+
+    let mut final_canvas = image::DynamicImage::new_rgba8(w,h);
+    for y in 0..h {
+        for x in 0..w {
+            let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
+            let corrected_distance: f32 = (sp.z / DCF) / 1000.0;
+            let pulled_pixel = stretched.get_pixel(x,y);
+            //println!("{:?}",pulled_pixel[0]);
+            //println!("corrected_distance: {:?}",corrected_distance);
+            if corrected_distance < 4.0 && corrected_distance > 0.0 && pulled_pixel[0] < 55 {
+                final_canvas.put_pixel(x,y,image::Rgba([sp.b, sp.g, sp.r,255]));
+
+                target_pixels = target_pixels + 1.0;
+                let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
+                sum_area += px_area;
+            }
+            else {
+                final_canvas.put_pixel(x,y,image::Rgba([0,0,0,255]));
+            }
+        }
+    }
+
+
+    /*for y in 0..h {
+        for x in 0..w {
             let col = x as usize;
             let row = y as usize;
             let sp = arr[(WIDTH * row) + col];
@@ -299,11 +339,16 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
             img.put_pixel(x, y, pixel);
         }
     }
-    // For de-buggin the following println! should be used
+    */
+
+    // For de-bugging the following println! should be used
     // println!("Based on the summed area of distance-corrected target-assigned pixels ({}), the slate area is: {} with an average area of {} mm^2/pixel",target_pixels,sum_area,sum_area/target_pixels);
     println!("{}",sum_area);
-    img.save(image_path)
-        .expect("Was not able to save modified image to file");
+    // img.save(image_path).expect("Was not able to save modified image to file");
+
+    //stretched.save(image_path).expect("Was not able to save modified image to file");
+    final_canvas.save(image_path).expect("Was not able to save modified image to file");
+
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
     target_pixels
 }

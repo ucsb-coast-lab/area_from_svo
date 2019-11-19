@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 csv = "1.1.1"
 image = "0.22.1"
+imageproc = "0.19.2"
 
 [lib]
 name = "process_stereo_image_csvs_rs"
