@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_parens)]
+#![allow(unused_imports)]
 
 // FFI dependencies
 use std::ffi::CStr;
@@ -8,7 +9,10 @@ use std::os::raw::c_char;
 use std::f32;
 use std::fs::File;
 
-use image::{ImageBuffer, RgbImage};
+use image::load_from_memory;
+use image::{GenericImage, GenericImageView, ImageBuffer, Luma, Pixel, RgbImage, Rgba, RgbaImage};
+//use image::buffer::Pixel;
+use imageproc::contrast::{stretch_contrast, threshold_mut};
 
 // Each line of the calibration csv files is ultimately deserialized into this struct
 #[derive(Copy, Clone, Debug)]
@@ -95,10 +99,10 @@ pub fn print_area(filename: &str) {
     let image_path = "processed_images/".to_owned() + &parsed_path[0].to_owned() + ".png";
     //println!("The processed image will be saved to: {}", image_path);
     let frame_num = &parsed_path[0].split("_").collect::<Vec<&str>>();
-    print!("{},",frame_num[1]);
+    print!("{},", frame_num[1]);
 
     let arr: Vec<StereoPixel> = convert_records_to_array(&filename);
-    let target_pixels: f32 =
+    let _target_pixels: f32 =
         convert_array_to_image_and_get_number_of_target_pixels(arr, &image_path);
     // For debugging use the below println! line
     // println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}\n",filename, target_pixels,12500f32/(target_pixels as f32));
@@ -145,165 +149,71 @@ fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
     arr
 }
 
+use image::imageops::grayscale;
+
 fn convert_array_to_image_and_get_number_of_target_pixels(
     arr: Vec<StereoPixel>,
     image_path: &str,
 ) -> f32 {
-    let mut img: RgbImage = ImageBuffer::new(2208, 1242);
-    let (w, h) = img.dimensions();
+    //let img: RgbImage = ImageBuffer::new(2208, 1242);
+    let (w, h) = (2208, 1242);
     let mut target_pixels: f32 = 0.0;
     let mut sum_area: f32 = 0.0;
 
-    for x in 0..w {
-        for y in 0..h {
-            let col = x as usize;
-            let row = y as usize;
-            let sp = arr[(WIDTH * row) + col];
-            let b = sp.b;
-            let g = sp.g;
-            let r = sp.r;
-            let z = sp.z;
+    //let mut my_image: RgbaImage = ImageBuffer::new(w, h);
+    let mut naive = image::DynamicImage::new_rgba8(w, h);
 
-            // Pixel needs to go in b,g,r order
-            let mut pixel = image::Rgb([b, g, r]);
-            let col = x as usize;
-            let row = y as usize;
-            let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
-
-            // Do some filtering here
-            // Something's off here; I think the R,B values might be flipped between what I think
-            // they are and which actually calls which one. However, since the problem seems to
-            // be going back to where we're actually getting things from the .svo file in the
-            // C++ program, I'm going to ignore that for now.
-
-            //let pixel_sum = (r.pow(2) as f32 + g.pow(2) as f32 + b.pow(2) as f32).powf(0.5);
-            //println!("pixel_sum = {} at z = {}",pixel_sum,z);
-
-
-            // Below are a bunch of filters that are designed to isolate the target slate, each of
-            // which have been customized depending on the .svo file that they're parsing
-            // TO_DO: These filters should be written as functions, where the pixel can get passed
-            // to them
-
-            // The filter r < 70 (I think this actually corresponds to b < 70) && z < 2000
-            // should isolate the slate target in the pool .svo file
-            if image_path.contains("pool") {
-                if arr[(WIDTH * row) + col].r < 70
-                    && arr[(WIDTH * row) + col].g < 45 // Having trouble balancing this parameter between 3_0 and 1_5 pool images
-                    && arr[(WIDTH * row) + col].r > 35
-                    && arr[(WIDTH * row) + col].z < 3000.0
-                    && row > 660
-                    && arr[(WIDTH * row) + col].z != 0.0
-                {
-                    //dbg!(pixel_sum);
-                    pixel[0] = b; // b
-                    pixel[1] = g; // g
-                    pixel[2] = r; // r
-                    target_pixels = target_pixels + 1.0;
-                    //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp())); // Original experimental data curve fit
-                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
-                    sum_area += px_area;
-                    //println!("px_area of target pixel #{} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
-                } else {
-                    pixel[0] = 0;
-                    pixel[1] = 0;
-                    pixel[2] = 0;
-                }
-            }
-            // Filter for the lab slate as a control (size ~ 126 mm x 100 mm)
-            else if image_path.contains("table") {
-                if (b as i8 - 56).abs() < 10
-                    && (g as i8 - 56).abs() < 10
-                    && (r as i8 - 70).abs() < 10
-                    && z < 3000.0
-                    && sp.pixel_x > 1100
-                {
-                    //dbg!(pixel_sum);
-                    pixel[0] = b; // b
-                    pixel[1] = g; // g
-                    pixel[2] = r; // r
-                    target_pixels = target_pixels + 1.0;
-                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
-                    sum_area += px_area;
-                } else {
-                    pixel[0] = 0;
-                    pixel[1] = 0;
-                    pixel[2] = 0;
-                }
-            } else if image_path.contains("serial2") {
-                if arr[(WIDTH * row) + col].r < 69
-                    && arr[(WIDTH * row) + col].g < 35
-                    && row > 300
-                    && (arr[(WIDTH * row) + col].z < 4000.0 || arr[(WIDTH * row) + col].z == 0.0 )
-                    && col < 1100
-                {
-                    //dbg!(pixel_sum);
-                    pixel[0] = b; // b
-                    pixel[1] = g; // g
-                    pixel[2] = r; // r
-                    target_pixels = target_pixels + 1.0;
-                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
-                    sum_area += px_area;
-                    let corrected_distance: f32 = (arr[(WIDTH * row) + col].z / DCF) / 1000.0;
-                //let px_area = (12500.0 / (125918.97 * (-1.1724 * corrected_distance).exp()));
-                //println!("px_area of target pixel {} @ corrected z = {}: {}",target_pixels,corrected_distance,px_area);
-                //sum_area += px_area;
-                } else {
-                    pixel[0] = 0;
-                    pixel[1] = 0;
-                    pixel[2] = 0;
-                }
-            } else if image_path.contains("serial") { // Needs to come AFTER serial2 filter
-                if arr[(WIDTH * row) + col].r < 62
-                    && row > 300
-                    && (arr[(WIDTH * row) + col].z < 4000.0 || arr[(WIDTH * row) + col].z == 0.0 )
-                    && col < 1500
-                    && col > 600
-                {
-                    //dbg!(pixel_sum);
-                    pixel[0] = b; // b
-                    pixel[1] = g; // g
-                    pixel[2] = r; // r
-                    target_pixels = target_pixels + 1.0;
-                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
-                    sum_area += px_area;
-                } else {
-                    pixel[0] = 0;
-                    pixel[1] = 0;
-                    pixel[2] = 0;
-                }
-            } else if image_path.contains("tank") {
-                if arr[(WIDTH * row) + col].r < 80
-                    && arr[(WIDTH * row) + col].g < 66
-                    && arr[(WIDTH * row) + col].z < 2500.0
-                    && row > 870
-                {
-                    //dbg!(pixel_sum);
-                    pixel[0] = b; // b
-                    pixel[1] = g; // g
-                    pixel[2] = r; // r
-                    target_pixels = target_pixels + 1.0;
-                    let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
-                    sum_area += px_area;
-                } else {
-                    pixel[0] = 0;
-                    pixel[1] = 0;
-                    pixel[2] = 0;
-                }
-            } else {
-                panic!(
-                    "The supplied image does not meet ANY of the filtered image path requirements"
-                )
-            }
-            //let pixel = image::Rgb([b, g, r])
-            img.put_pixel(x, y, pixel);
+    // Build the initial GenericImage structure
+    for y in 0..h {
+        for x in 0..w {
+            let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
+            naive.put_pixel(x, y, image::Rgba([sp.b, sp.g, sp.r, 255]))
         }
     }
-    // For de-buggin the following println! should be used
+    // Run the preliminary image processing over it
+    let mut luma_image = naive.to_luma();
+    let stretched = stretch_contrast(&mut luma_image, 33, 45);
+
+    let mut final_canvas = image::ImageBuffer::new(w, h);
+
+    for y in 0..h {
+        for x in 0..w {
+            let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
+            let corrected_distance: f32 = (sp.z / DCF) / 1000.0;
+            let mut pulled_pixel = stretched.get_pixel(x, y).to_luma(); // Comment to to_luma() for color
+
+            // Lines for debugging
+            //println!("{:?}",pulled_pixel);
+            //println!("corrected_distance: {:?}",corrected_distance);
+            if corrected_distance < 4.0
+                && corrected_distance > 0.0
+                && pulled_pixel[0] < 180
+                && sp.r < 50
+            {
+                //final_canvas.put_pixel(x,y,image::Rgba([sp.b, sp.g, sp.r,255]));
+                pulled_pixel[0] = 255; // For luma image result
+
+                target_pixels = target_pixels + 1.0;
+                let px_area = std::f32::consts::PI * (corrected_distance).powf(2.0) / 10.0;
+                sum_area += px_area;
+            } else {
+                //final_canvas.put_pixel(x,y,image::Rgba([0,0,0,255]));
+                pulled_pixel[0] = 0;
+            }
+            final_canvas.put_pixel(x, y, pulled_pixel);
+        }
+    }
+
+    // For de-bugging the following println! should be used
     // println!("Based on the summed area of distance-corrected target-assigned pixels ({}), the slate area is: {} with an average area of {} mm^2/pixel",target_pixels,sum_area,sum_area/target_pixels);
-    println!("{}",sum_area);
-    img.save(image_path)
+    println!("{}", sum_area);
+    // img.save(image_path).expect("Was not able to save modified image to file");
+
+    //stretched.save(image_path).expect("Was not able to save modified image to file");
+    final_canvas
+        .save(image_path)
         .expect("Was not able to save modified image to file");
+
     // Returns the total number of pixels assigned to the targete slate in this image as a u32 value
     target_pixels
 }
