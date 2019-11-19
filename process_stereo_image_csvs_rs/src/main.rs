@@ -1,5 +1,6 @@
 mod tests;
 mod lib;
+
 use lib::print_area;
 
 use std::env;
