@@ -21,12 +21,15 @@ The frame sub-sampling rate and image processing method (for example, an image p
 
 __Build Requirements__
 
+Make sure to follow the appropriate build instructions for ZED and OpenCV, and be sure to add the relevant paths to the `.bashrc` file
+
 For writing .csv files:
 - ZED-supported NVIDIA GPU
 - NVIDIA CUDA 10.0 (*not 10.1*)
-- ZED SDK >= v2.8.3
+- ZED SDK = v2.8.3 or v2.8.5
 - CMake >= 2.6 (ExternalProject module required)
 - GNU Parallel (batch_run only, please remember to cite in publications)
+- OpenCV 3.4
 
 For stereo image .csv processing
 - Rust >= 1.37-stable and `cargo`
@@ -71,6 +74,7 @@ __Recommended Directory Structure__
 ├── results.csv
 ├── videofile.svo
 └── zed_count_frames
+    ├── build.sh
     ├── CMakeLists.txt
     └── main.cpp
 

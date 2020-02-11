@@ -48,13 +48,12 @@ function write_stereo_image_csvs {
     # so we need to run sequential parallel commands.
 
     # ***EDIT THIS TO CHANGE HOW OFTEN FRAMES ARE SAMPLED FROM THE .SVO FILE***
-    for ((i=0; i<$total_frames;i=i+1))
+    for ((i=0; i<$total_frames;i=i+3))
     do
-        # parallel echo ::: $i $((i+1)) $((i+2))
+        #parallel echo ::: $i $((i+1)) $((i+2))
 
-        ./ZEDWriteStereoImageCSV $1 $i
-        #parallel ./ZEDWriteStereoImageCSV &1 ::: $i $((i+1)) $((i+2))
-
+        #./ZEDWriteStereoImageCSV $1 $i
+        parallel ./ZEDWriteStereoImageCSV $1 ::: $i $((i+1)) $((i+2))
     done
 }
 
