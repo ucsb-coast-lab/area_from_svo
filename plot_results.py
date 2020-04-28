@@ -40,6 +40,11 @@ plt.title('Frame Area Value Histogram')
 
 plt.subplot(1,2,2)
 plt.bar(x, y, width=0.8, bottom=None, align='center', data=None)
+plt.plot([0,max(x)],[12500,12500],'r')
 plt.scatter(x,y,marker='.',color='black',alpha=0.6,s=1)
 plt.ylim(0,25000)
+plt.xlabel('Frame')
+plt.ylabel('Area [mm^2]')
+plt.title('Frame vs Area')
+
 plt.show()
