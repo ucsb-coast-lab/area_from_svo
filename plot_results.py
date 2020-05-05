@@ -4,6 +4,8 @@ import numpy as np
 from numpy import genfromtxt
 import os
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+from scipy.stats import norm
 
 filename = "results.csv"
 fltrd_fname = "filtered_"+filename;
@@ -32,14 +34,24 @@ hist, bin_edges = np.histogram(y)
 #n, bins, patches = plt.hist(y, n_equal_bins, facecolor='#0504aa', alpha=0.7,rwidth=0.85)
 #n, bins, patches = plt.hist(y[y>250], bins='auto', facecolor='blue', alpha=0.5,rwidth=0.85) # auto-define number of bins
 plt.subplot(1,2,1)
-n, bins, patches = plt.hist(y[y>250], bins=1000, facecolor='blue', alpha=0.5,rwidth=0.85) # auto-define number of bins
+n, bins, patches = plt.hist(y[y>250], bins='auto', facecolor='blue', alpha=0.5,rwidth=0.85) # auto-define number of bins
+print("bins = ",bins)
+(mu, sigma) = norm.fit(y)
+curve = norm.pdf(bins,mu,sigma)
+plt.plot(bins, curve*bins[9]*100, 'b--', linewidth=2)
 plt.xlabel('Value')
 plt.ylabel('Frequency')
-plt.xlim(0,40000)
-plt.title('Frame Area Value Histogram')
+#plt.xlim(0,40000)
+plt.title('Distribution of Estimated Target Area   $\mu={:.3}$, $\sigma={:.3}$'.format(mu,sigma))
+plt.ylabel('Binned Frames')
+plt.xlabel('Estimated Target Area (mm^2)')
+
 
 plt.subplot(1,2,2)
 plt.bar(x, y, width=0.8, bottom=None, align='center', data=None)
 plt.scatter(x,y,marker='.',color='black',alpha=0.6,s=1)
-plt.ylim(0,25000)
+#plt.ylim(0,25000)
+plt.ylabel('Estimated Target Area (mm^2)')
+plt.xlabel("Frame Number")
+plt.title('Estimated Frame Target Area')
 plt.show()
