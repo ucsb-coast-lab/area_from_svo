@@ -179,7 +179,9 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
     for y in 0..h {
         for x in 0..w {
             let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
-            let corrected_distance: f32 = (sp.z / DCF) / 1000.0;
+            let radial_dist = (sp.x.powf(2.0) + sp.y.powf(2.0) + sp.z.powf(2.0)).powf(0.5);
+            let corrected_distance: f32 = (sp.z / DCF) / 1000.0; // Note: This is the one that has been used for most of the preliminary analysis
+            //let corrected_distance: f32 = (radial_dist / DCF) / 1000.0;
             let mut pulled_pixel = stretched.get_pixel(x, y).to_luma(); // Comment to to_luma() for color
 
             // Lines for debugging
