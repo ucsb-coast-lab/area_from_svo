@@ -8,6 +8,7 @@ edition = "2018"
 csv = "1.1.1"
 image = "0.22.1"
 imageproc = "0.19.2"
+rand = "^0.7"
 
 [lib]
 name = "process_stereo_image_csvs_rs"

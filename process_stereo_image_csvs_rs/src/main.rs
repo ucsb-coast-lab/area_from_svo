@@ -1,6 +1,8 @@
+mod clustering;
 mod lib;
 mod tests;
 
+use clustering::kmeans_cluster_record;
 use lib::print_area;
 
 use std::env;
@@ -23,7 +25,9 @@ fn main() {
         Ok(path) => path,
         Err(_error) => panic!("Couldn't convert OsString to String"),
     };
-    print_area(&path);
+    // print_area(&path);
+    kmeans_cluster_record(&path,3,0.0);
+
 }
 
 /// Returns the first positional argument sent to this process. If there are no
