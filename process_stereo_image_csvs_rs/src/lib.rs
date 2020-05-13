@@ -16,15 +16,15 @@ use imageproc::contrast::{stretch_contrast, threshold_mut};
 
 // Each line of the calibration csv files is ultimately deserialized into this struct
 #[derive(Copy, Clone, Debug)]
-struct StereoPixel {
-    pixel_x: u32,
-    pixel_y: u32,
-    x: f32,
-    y: f32,
-    z: f32,
-    r: u8,
-    g: u8,
-    b: u8,
+pub struct StereoPixel {
+    pub pixel_x: u32,
+    pub pixel_y: u32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 impl StereoPixel {
@@ -51,8 +51,8 @@ struct CalibrationSet {
 
 const WIDTH: usize = 2208; // Width of the .csv image in pixels
 const HEIGHT: usize = 1242; // Height of the .csv image in pixels
-const TARGET_AREA: f32 = 12500.0; // Area of the slate target in mm^2
-const DCF: f32 = 0.746; // Distance correction factor, calculated from Excel
+// const TARGET_AREA: f32 = 12500.0; // Area of the slate target in mm^2
+pub const DCF: f32 = 0.746; // Distance correction factor, calculated from Excel
 
 // Used for deserializing the csv file results, then converts to StereoPixel struct
 type Record = (u32, u32, f32, f32, f32, u8, u8, u8);
@@ -108,7 +108,7 @@ pub fn print_area(filename: &str) {
     // println!("For {}, based on an ideal area of 12500 mm^2 and {} target-assigned pixels, the per-pixel area is {}\n",filename, target_pixels,12500f32/(target_pixels as f32));
 }
 
-fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
+pub fn convert_records_to_array(file_path: &str) -> Vec<StereoPixel> {
     // println!("Attempting to open the stereo image csv at path: {}",file_path);
     let file = File::open(file_path).expect("Couldn't open the stereo image .csv file"); //?;
     let mut rdr = csv::ReaderBuilder::new()
@@ -181,17 +181,13 @@ fn convert_array_to_image_and_get_number_of_target_pixels(
             let sp = arr[(WIDTH * (y as usize)) + (x as usize)];
             let radial_dist = (sp.x.powf(2.0) + sp.y.powf(2.0) + sp.z.powf(2.0)).powf(0.5);
             let corrected_distance: f32 = (sp.z / DCF) / 1000.0; // Note: This is the one that has been used for most of the preliminary analysis
-            //let corrected_distance: f32 = (radial_dist / DCF) / 1000.0;
+                                                                 //let corrected_distance: f32 = (radial_dist / DCF) / 1000.0;
             let mut pulled_pixel = stretched.get_pixel(x, y).to_luma(); // Comment to to_luma() for color
 
             // Lines for debugging
             //println!("{:?}",pulled_pixel);
             //println!("corrected_distance: {:?}",corrected_distance);
-            if corrected_distance < 4.0
-                && corrected_distance > 0.0
-                && sp.b < 100
-                && sp.g < 80
-            {
+            if corrected_distance < 4.0 && corrected_distance > 0.0 && sp.b < 100 && sp.g < 80 {
                 //final_canvas.put_pixel(x,y,image::Rgba([sp.b, sp.g, sp.r,255]));
                 pulled_pixel[0] = 255; // For luma image result
 

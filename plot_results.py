@@ -38,6 +38,23 @@ def build_plots(x,y):
     # plot the histogram
     #n, bins, patches = plt.hist(y, n_equal_bins, facecolor='#0504aa', alpha=0.7,rwidth=0.85)
     #n, bins, patches = plt.hist(y[y>250], bins='auto', facecolor='blue', alpha=0.5,rwidth=0.85) # auto-define number of bins
+
+    # K means has a tendency to create some outliers in our area data, so we filter out results above a certain threshold since we can
+    # guess that they will probably not be accurate values
+    data_size = len(x);
+    max_area = 350000;
+    deleted_total = 0
+    bad_indices = [];
+    for i in range(0,data_size-1):
+        if y[i] > max_area:
+            bad_indices.append(i);
+            deleted_total +=1;
+
+    x = np.delete(x,bad_indices);
+    y = np.delete(y,bad_indices);
+    print("deleted_total",deleted_total)
+    print("data size was {},now should be {}".format(data_size,len(x)))
+
     plt.subplot(1,2,1)
     n, bins, patches = plt.hist(y[y>250], bins='auto', facecolor='blue', alpha=0.5,rwidth=0.85) # auto-define number of bins
     (mu, sigma) = norm.fit(y)
