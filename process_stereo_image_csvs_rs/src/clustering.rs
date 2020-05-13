@@ -217,6 +217,7 @@ pub fn build_kmeans_pixel_list_from_stero_record(
 
 pub fn kmeans_cluster_record(
     record_path: &str,
+    image_path: &str,
     num_clusters: usize,
     ratio: f64,
 ) -> f32 {
@@ -400,10 +401,23 @@ pub fn kmeans_cluster_record(
     }
     println!("{}", sum_area);
 
-    clustered_img.save("processed_images/cluster_test.png").expect("Couldn't save the clusterd image");
+    clustered_img.save(image_path).expect("Couldn't save the clusterd image");
 
     target_pixels
 
+}
+
+pub fn print_area_from_clusters(filename: &str, num_clusters: usize,ratio: f64) {
+    let csv_path = filename.split("stereo_image_csvs/").collect::<Vec<&str>>();
+    //println!("csv_path: {}", csv_path[1]);
+    let parsed_path = csv_path[1].split(".csv").collect::<Vec<&str>>();
+    //println!("image_path except csv: {}", parsed_path[0]);
+    let image_path = "processed_images/".to_owned() + &parsed_path[0].to_owned() + ".png";
+    //println!("The processed image will be saved to: {}", image_path);
+    let frame_num = &parsed_path[0].split("_").collect::<Vec<&str>>();
+    print!("{},", frame_num[frame_num.len() - 1]);
+
+    kmeans_cluster_record(&filename,&image_path,num_clusters,ratio);
 }
 
 // This function is used to check that the variation between cluster points and their centriod are decreasing

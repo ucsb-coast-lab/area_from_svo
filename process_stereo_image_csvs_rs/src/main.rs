@@ -2,7 +2,7 @@ mod clustering;
 mod lib;
 mod tests;
 
-use clustering::kmeans_cluster_record;
+use clustering::print_area_from_clusters;
 use lib::print_area;
 
 use std::env;
@@ -26,7 +26,7 @@ fn main() {
         Err(_error) => panic!("Couldn't convert OsString to String"),
     };
     // print_area(&path);
-    kmeans_cluster_record(&path,3,0.0);
+    print_area_from_clusters(&path,3,0.0);
 
 }
 
