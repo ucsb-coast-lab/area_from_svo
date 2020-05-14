@@ -25,7 +25,7 @@ fn main() {
         Ok(path) => path,
         Err(_error) => panic!("Couldn't convert OsString to String"),
     };
-    // print_area(&path);
+    //print_area(&path);
     print_area_from_clusters(&path,3,0.0);
 
 }

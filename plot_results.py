@@ -2,7 +2,7 @@
 
 import numpy as np
 from numpy import genfromtxt
-import os
+import os, sys
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from scipy.stats import norm
@@ -97,7 +97,8 @@ def select_subset_from_total_data(frames,x,y):
 
 
 def main():
-    x,y = import_data_from_csv('results.csv')
+    #x,y = import_data_from_csv('results.csv')
+    x,y = import_data_from_csv(sys.argv[1])
     build_plots(x,y);
     frames = [308,310,311,312,323,325,326,327,328,329,330,331,345,346,347,348,349,350,351,352,353,354,354,355,356,357,358,359,360,361,362,363,364,365,366,436,666,672,694,695,696,697,698,699,700,701,702,703,704,705,726,727,728,729,730,731,763,773,774,775,776,777,778,779,780,781,782,783,784,785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823,824,825,826,827];
     #frames = [308,310,311];

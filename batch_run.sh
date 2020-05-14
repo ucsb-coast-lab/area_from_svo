@@ -113,11 +113,12 @@ fi
 
 # If only a csv directory is provided, build and process csvs
 if [ -z "${v}" ] && [ ! -z "${c}" ]; then
+    echo 'Note: immediate results display is not currently enabled for performance evaluation'
     build_rust
     echo '- Processing .csv files!'
     batch_run_stereo_csvs ${c}
     # Data visualization with Python
-    ./plot_results.py
+    #./plot_results.py
 fi
 
 # If both a csv directory and is provided, build and process csvs
