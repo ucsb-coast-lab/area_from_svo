@@ -11,3 +11,4 @@ ZED*
 zed_count_frames/build/*
 *.ods
 *.zip
+*/target
