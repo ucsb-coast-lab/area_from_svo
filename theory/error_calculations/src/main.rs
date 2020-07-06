@@ -6,41 +6,42 @@ use std::f64::consts::PI;
 use std::iter::{FromIterator, Iterator};
 
 fn main() {
-    let r = 2000.;
+    let r = 1500.;
 
     let sigma_r = 0.;
     let sigma_theta_h = 0f64.to_radians(); // in degrees
     let sigma_theta_v = 0f64.to_radians(); // in degrees
 
-    let mut sigma_r_values: Vec<f64> = Vec::new();
-    let mut sigma_r_errors: Vec<f64> = Vec::new();
+    let (theta_v, theta_h) = return_theta_v_h();
 
-    let mut sigma_theta_v_values: Vec<f64> = Vec::new();
-    let mut sigma_theta_v_errors: Vec<f64> = Vec::new();
+    let mut sigma_r_over_values: Vec<f64> = Vec::new();
+    let mut sigma_r_over_errors: Vec<f64> = Vec::new();
 
-    let mut sigma_theta_h_values: Vec<f64> = Vec::new();
-    let mut sigma_theta_h_errors: Vec<f64> = Vec::new();
+    let mut sigma_theta_v_over_values: Vec<f64> = Vec::new();
+    let mut sigma_theta_v_over_errors: Vec<f64> = Vec::new();
 
+    let mut sigma_theta_h_over_values: Vec<f64> = Vec::new();
+    let mut sigma_theta_h_over_errors: Vec<f64> = Vec::new();
 
-    for i in 0..10 {
-        let sigma_r = (i as f64 / 100. ) * r; 
-        sigma_r_values.push(sigma_r);
+    for i in {0..150}.step_by(10) {
+        let sigma_r = (i as f64  ); 
+        sigma_r_over_values.push(sigma_r / r);
         let error = calculate_errors(r,sigma_r,sigma_theta_v,sigma_theta_h);
-        sigma_r_errors.push(error);
+        sigma_r_over_errors.push(error);
     }
 
     for i in 0..10 {
-        let sigma_theta_v = (i as f64 / 5. ).to_radians(); 
-        sigma_theta_v_values.push(sigma_theta_v);
+        let sigma_theta_v = (i as f64 / 10.).to_radians(); 
+        sigma_theta_v_over_values.push(sigma_theta_v / theta_v);
         let error = calculate_errors(r,sigma_r,sigma_theta_v,sigma_theta_h);
-        sigma_theta_v_errors.push(error);
+        sigma_theta_v_over_errors.push(error);
     }
 
     for i in 0..10 {
-        let sigma_theta_h = (i as f64 / 5. ).to_radians(); 
-        sigma_theta_h_values.push(sigma_theta_h);
+        let sigma_theta_h = (i as f64 / 10.).to_radians(); 
+        sigma_theta_h_over_values.push(sigma_theta_h / theta_h);
         let error = calculate_errors(r,sigma_r,sigma_theta_v,sigma_theta_h);
-        sigma_theta_h_errors.push(error);
+        sigma_theta_h_over_errors.push(error);
     }
 
     let r = r as u32; // For use in the plots
@@ -49,46 +50,34 @@ fn main() {
     ctx.run(python! {
         import numpy as np;
         import matplotlib.pyplot as plt;
-        
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        plot_v = ax1.plot('sigma_theta_v_errors,'sigma_theta_v_values,"r-",label="$\\sigma_\\theta$$_V$");
-        plot_h = ax1.plot('sigma_theta_h_errors,'sigma_theta_h_values,"g-",label="$\\sigma_\\theta$$_H$");
-        plot_r = ax2.plot('sigma_r_errors,'sigma_r_values,"b-",label="$\\sigma_r$");
-        
-        lns = plot_v + plot_h + plot_r;
-        labs = [l.get_label() for l in lns]
-        ax1.legend(lns, labs, loc="lower right")
 
-        ax1.set_xlabel("Uncertainty in Pixel Area [%]")
-        ax1.set_ylabel("$\\sigma_\\theta$ [radians] ")
-        ax2.set_ylabel("$\\sigma_r$ [mm]")
+        fig, axs = plt.subplots(1, 2);
+        fig.suptitle("Error Contributions to Pixel Area")
 
-        //ax1.legend(loc="lower right")
-        //ax2.legend(loc=0)
-        plt.title("Error Contribution to Pixel Area For $\\theta_v$ at r = {} mm".format('r))
+        axs[0].plot('sigma_theta_v_over_values,'sigma_theta_v_over_errors,"ro",label="$\\frac{\\sigma_{\\theta_V}}{\\theta_V}$");
+        axs[0].plot('sigma_theta_h_over_values,'sigma_theta_h_over_errors,"go",label="$\\frac{\\sigma_{\\theta_H}}{\\theta_H}$");
+        axs[0].set_ylabel("Uncertainty in Pixel Area [%]")
+        axs[0].set_xlabel("$\\dfrac{\\sigma_\\theta}{\\theta}$")
+        axs[0].set_title("$\\sigma_{\\theta_{V,H}}$ Contributions")
+        axs[0].legend();
         
+        axs[1].plot('sigma_r_over_values,'sigma_r_over_errors,"bo",label="$\\frac{\\sigma_r}{r}$");
+        axs[1].set_ylabel("Uncertainty in Pixel Area [%]")
+        axs[1].set_xlabel("$\\dfrac{\\sigma_r}{r}$")
+        axs[1].set_title("$\\sigma_r$ Contributions")
+        axs[1].legend();
+                
         plt.show()
 
       });
 }
 
 fn calculate_errors(r: f64, sigma_r: f64, sigma_theta_v: f64, sigma_theta_h: f64) -> f64 {
-    let n1: f64 = 1.0; // Approximate index of refraction for air
-    let n2: f64 = 1.49; // 1.49 Approximate index of refraction for Polymethyl methacrylate (acrylic)
-    let n3: f64 = 1.33; // Approximate index of refration for fresh water
 
-    let fov_v = 60f64.to_radians();
+    let (theta_v, theta_h) = return_theta_v_h();
+
     let n_v = 1242.0;
-    let fov_h = 90f64.to_radians();
     let n_h = 2208.0;
-
-    let t3v = snell(n2, n3, snell(n1, n2, fov_v / 2.));
-
-    let t3h = snell(n2, n3, snell(n1, n2, fov_h / 2.));
-
-    let theta_v = t3v / PI;
-    let theta_h = t3h / PI;
 
     let dH = (2.0 * PI * r) * theta_v / n_h;
     let dV = (2.0 * PI * r) * theta_h / n_v;
@@ -124,9 +113,7 @@ fn calculate_errors(r: f64, sigma_r: f64, sigma_theta_v: f64, sigma_theta_h: f64
     let px_area_calc = std::f64::consts::PI * (r / 1000.).powf(2.0) / 10.0;
     println!("px_area of: {} mm^2  from simple calc",px_area_calc);
     println!("px_area of: {} mm^2 from dV*dH",px_area);
-      
-    
-    
+          
     let percentage_of_pixel = (total_error/px_area) * 100.;
     println!("That means, as a percentage of the actual pixel area, the variation is: {:.2}%",percentage_of_pixel);
     let req_num_pixels = (163000./px_area) as u32;
@@ -143,4 +130,21 @@ fn snell(n1: f64, n2: f64, theta: f64) -> f64 {
 
 fn to_vec<T: std::clone::Clone>(arr: Array1<T>) -> Vec<T> {
     Array::from_iter(arr.iter().cloned()).to_vec()
+}
+
+fn return_theta_v_h() -> (f64,f64) {
+    let n1: f64 = 1.0; // Approximate index of refraction for air
+    let n2: f64 = 1.49; // 1.49 Approximate index of refraction for Polymethyl methacrylate (acrylic)
+    let n3: f64 = 1.33; // Approximate index of refration for fresh water
+
+    let fov_v = 60f64.to_radians();
+    let fov_h = 90f64.to_radians();
+
+    let t3v = snell(n2, n3, snell(n1, n2, fov_v / 2.));
+
+    let t3h = snell(n2, n3, snell(n1, n2, fov_h / 2.));
+
+    let theta_v = t3v / PI;
+    let theta_h = t3h / PI;
+    (theta_v,theta_h)
 }
